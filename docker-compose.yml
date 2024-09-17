@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: todo_db
+      POSTGRES_USER: todo_user
+      POSTGRES_PASSWORD: todo_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  web:
+    build:
+      context: ./backend
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      gunicorn --workers 3 --bind 0.0.0.0:8000 backend.backend.wsgi:application
+      "
+    volumes:
+      - ./backend:/app
+    expose:
+      - "8000" # Expose port internally to Nginx
+    depends_on:
+      - db
+    environment:
+      - DEBUG=1
+      - DB_NAME=todo_db
+      - DB_USER=todo_user
+      - DB_PASSWORD=todo_password
+      - DB_HOST=db
+      - DB_PORT=5432
+    networks:
+      - app_network
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
