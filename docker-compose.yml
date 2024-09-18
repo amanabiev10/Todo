@@ -10,7 +10,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 172.16.238.10
 
   web:
     build:
@@ -35,7 +36,8 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 172.16.238.11
 
   nginx:
     build:
@@ -45,10 +47,15 @@ services:
     depends_on:
       - web
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 172.16.238.12
 
 volumes:
   postgres_data:
 
 networks:
   app_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.238.0/24
